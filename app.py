@@ -9,8 +9,8 @@ def parse_raw_text(raw_text):
     all_data = []
     headers = ["Date", "Total", "Accomm"]
 
-    # Regular expression to capture the date, total, and accommodation values from each row
-    pattern = re.compile(r"(\d{2}/\d{2}/\d{4})\s+\d+\s+(\d+)\s+.*?(\d+\.\d{2})")
+    # Updated regular expression to capture the correct "Total" and "Accomm" columns
+    pattern = re.compile(r"(\d{2}/\d{2}/\d{4})\s+\d+\s+(\d+)\s+.*?\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+\.\d{2})")
 
     # Search for matching rows
     matches = pattern.findall(raw_text)
