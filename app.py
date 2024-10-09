@@ -16,10 +16,13 @@ def extract_pdf(file):
 
             for table in tables:
                 for row in table:
-                    # Skip rows that contain the headers
+                    # Only append row if it's not a header
                     if row != headers:
+                        # Adjust rows that don't have the right number of columns
+                        if len(row) != len(headers):
+                            row.extend([None] * (len(headers) - len(row)))
                         all_data.append(row)
-    
+
     # Convert list of rows into a pandas DataFrame
     df = pd.DataFrame(all_data, columns=headers)
     
