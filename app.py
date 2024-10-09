@@ -10,7 +10,7 @@ def parse_raw_text(raw_text):
     # Define the headers to capture all columns
     headers = ["Date", "Avail", "Total", "Indv", "Multi", "Blocks", "Occ%", "Ad", "Ch", "Inf", "Accomm", "F&B", "Other", "Total Revenue"]
 
-    # Updated regular expression to capture all columns based on observed structure
+    # Adjusted regular expression to better handle inconsistent spacing and capture all columns
     pattern = re.compile(
         r"(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)"
     )
@@ -18,7 +18,11 @@ def parse_raw_text(raw_text):
     # Search for matching rows
     matches = pattern.findall(raw_text)
 
+    # For debugging, print the matches to see what is being captured
+    st.write("Matches found:", matches)
+
     for match in matches:
+        # Convert to a list and append to the data
         all_data.append(list(match))
 
     # Convert list of rows into a pandas DataFrame
@@ -29,7 +33,7 @@ def parse_raw_text(raw_text):
         return None
 
 # Streamlit interface
-st.title("PDF to CSV/Excel Converter - Capture All Columns")
+st.title("PDF to CSV/Excel Converter - Fix Column Discrepancies")
 
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
