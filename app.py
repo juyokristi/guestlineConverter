@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
+from io import BytesIO
 
 # Function to extract tables from PDF using pdfplumber
 def extract_pdf(file):
@@ -10,7 +11,6 @@ def extract_pdf(file):
             tables.extend(page.extract_tables())
     
     # Convert the list of tables into a pandas DataFrame
-    # Assuming the PDF has a consistent table format
     df_list = [pd.DataFrame(table) for table in tables if len(table) > 0]
     df = pd.concat(df_list, ignore_index=True)
     return df
@@ -30,6 +30,11 @@ if uploaded_file is not None:
     csv = df.to_csv(index=False)
     st.download_button("Download as CSV", csv, "data.csv", "text/csv")
 
+    # Create Excel file in memory using BytesIO
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, index=False)
+    writer.save()
+
     # Download as Excel
-    excel = df.to_excel(index=False, engine='xlsxwriter')
-    st.download_button("Download as Excel", excel, "data.xlsx")
+    st.download_button("Download as Excel", output.getvalue(), "data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
