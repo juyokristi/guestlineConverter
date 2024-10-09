@@ -1,11 +1,18 @@
 import streamlit as st
 import pandas as pd
-import tabula
+import pdfplumber
 
-# Function to extract tables from PDF
+# Function to extract tables from PDF using pdfplumber
 def extract_pdf(file):
-    tables = tabula.read_pdf(file, pages='all', multiple_tables=True)
-    df = pd.concat(tables, ignore_index=True)
+    tables = []
+    with pdfplumber.open(file) as pdf:
+        for page in pdf.pages:
+            tables.extend(page.extract_tables())
+    
+    # Convert the list of tables into a pandas DataFrame
+    # Assuming the PDF has a consistent table format
+    df_list = [pd.DataFrame(table) for table in tables if len(table) > 0]
+    df = pd.concat(df_list, ignore_index=True)
     return df
 
 # Streamlit interface
