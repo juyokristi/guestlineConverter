@@ -10,9 +10,9 @@ def parse_raw_text(raw_text):
     # Define the headers to capture all columns
     headers = ["Date", "Avail", "Total", "Indv", "Multi", "Blocks", "Occ%", "Ad", "Ch", "Inf", "Accomm", "F&B", "Other", "Total Revenue"]
 
-    # Adjusted regular expression to better handle inconsistent spacing and capture all columns
+    # Updated regular expression to handle both positive and negative numbers
     pattern = re.compile(
-        r"(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)"
+        r"(\d{2}/\d{2}/\d{4})\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+([\d.]+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)"
     )
 
     # Search for matching rows
@@ -33,7 +33,7 @@ def parse_raw_text(raw_text):
         return None
 
 # Streamlit interface
-st.title("PDF to CSV/Excel Converter - Fix Column Discrepancies")
+st.title("PDF to CSV/Excel Converter - Handle Negative Avail")
 
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
