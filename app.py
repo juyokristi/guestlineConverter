@@ -1,48 +1,23 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
+import re
 from io import BytesIO
 
-# Helper function to check if a row contains a valid date
-def is_valid_date(row):
-    try:
-        pd.to_datetime(row[0], format="%d/%m/%Y")
-        return True
-    except (ValueError, IndexError):
-        return False
-
-# Function to extract relevant data from the PDF
-def extract_pdf(file):
+# Function to parse relevant data from raw text
+def parse_raw_text(raw_text):
     all_data = []
     headers = ["Date", "Total", "Accomm"]
 
-    with pdfplumber.open(file) as pdf:
-        for i, page in enumerate(pdf.pages):
-            st.write(f"Processing page {i + 1}")
-            tables = page.extract_tables()
+    # Regular expression to capture the date, total, and accommodation values from each row
+    pattern = re.compile(r"(\d{2}/\d{2}/\d{4})\s+\d+\s+(\d+)\s+.*?(\d+\.\d{2})")
 
-            for table in tables:
-                for row in table:
-                    # Log row for debugging
-                    st.write(f"Row length: {len(row)} - Row content: {row}")
+    # Search for matching rows
+    matches = pattern.findall(raw_text)
 
-                    # Skip row if it is not valid (doesn't have at least 8 columns)
-                    if len(row) < 8:
-                        st.write(f"Skipping row due to insufficient columns: {row}")
-                        continue
-                    
-                    # Skip known header row by length and content
-                    if row[0].startswith("ANGELCHIPP"):
-                        st.write(f"Skipping header row: {row}")
-                        continue
-
-                    # Check if the row starts with a valid date
-                    if is_valid_date(row):
-                        # Extract Date, Total, Accomm (adjust the indices if needed)
-                        date = row[0]
-                        total = row[2]
-                        accomm = row[7]
-                        all_data.append([date, total, accomm])
+    for match in matches:
+        date, total, accomm = match
+        all_data.append([date, total, accomm])
 
     # Convert list of rows into a pandas DataFrame
     if all_data:
@@ -57,7 +32,14 @@ st.title("PDF to CSV/Excel Converter")
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
 if uploaded_file is not None:
-    df = extract_pdf(uploaded_file)
+    with pdfplumber.open(uploaded_file) as pdf:
+        full_text = ""
+        for i, page in enumerate(pdf.pages):
+            st.write(f"Processing page {i + 1}")
+            full_text += page.extract_text()
+
+    # Parse the raw text for Date, Total, and Accomm
+    df = parse_raw_text(full_text)
     
     if df is None or df.empty:
         st.error("No data extracted from the PDF. Please check the file format or columns.")
