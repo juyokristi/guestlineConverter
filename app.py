@@ -3,23 +3,19 @@ import pandas as pd
 import pdfplumber
 from io import BytesIO
 
-# Known header rows to skip
-HEADER_ROW = ['ANGELCHIPP\nDate Avail', 'Rooms Sold\nTotal Indv Multi Blocks', 'Occ%', 'Sleepers\nAd Ch Inf', 
-              'Revenue\nNon-\nAccomm F&B Other Total Revenue', 'ARR APR Yield ROOS DFS Wait List']
-
 # Helper function to check if a row contains a valid date
 def is_valid_date(row):
     try:
         pd.to_datetime(row[0], format="%d/%m/%Y")
         return True
-    except ValueError:
+    except (ValueError, IndexError):
         return False
 
 # Function to extract relevant data from the PDF
 def extract_pdf(file):
     all_data = []
     headers = ["Date", "Total", "Accomm"]
-    
+
     with pdfplumber.open(file) as pdf:
         for i, page in enumerate(pdf.pages):
             st.write(f"Processing page {i + 1}")
@@ -27,19 +23,26 @@ def extract_pdf(file):
 
             for table in tables:
                 for row in table:
-                    # Skip known header row
-                    if row == HEADER_ROW:
+                    # Log row for debugging
+                    st.write(f"Row length: {len(row)} - Row content: {row}")
+
+                    # Skip row if it is not valid (doesn't have at least 8 columns)
+                    if len(row) < 8:
+                        st.write(f"Skipping row due to insufficient columns: {row}")
                         continue
                     
+                    # Skip known header row by length and content
+                    if row[0].startswith("ANGELCHIPP"):
+                        st.write(f"Skipping header row: {row}")
+                        continue
+
                     # Check if the row starts with a valid date
                     if is_valid_date(row):
-                        # Extract Date, Total, Accomm (column indices 0, 2, and 7 respectively)
+                        # Extract Date, Total, Accomm (adjust the indices if needed)
                         date = row[0]
-                        total = row[2]  # Adjust the index if needed
-                        accomm = row[7]  # Adjust the index if needed
+                        total = row[2]
+                        accomm = row[7]
                         all_data.append([date, total, accomm])
-                    else:
-                        st.write(f"Skipping non-data row: {row}")
 
     # Convert list of rows into a pandas DataFrame
     if all_data:
