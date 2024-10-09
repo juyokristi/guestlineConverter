@@ -1,36 +1,34 @@
 import streamlit as st
-import pandas as pd
 import pdfplumber
 import re
+import pandas as pd
 from io import BytesIO
 
-# Function to parse relevant data from raw text (this time capturing all columns)
+# Helper function to capture all data rows without a strict column pattern
 def parse_raw_text(raw_text):
     all_data = []
-    # Assuming the columns are Date, Avail, Total, Indv, Multi, Occ%, Ad Ch, Accomm, F&B, Other, etc.
-    headers = ["Date", "Avail", "Total", "Indv", "Multi", "Occ%", "Ad Ch", "Accomm", "F&B", "Other", "Total Revenue"]
 
-    # Updated regular expression to capture all columns (adjust as needed based on actual text structure)
-    # This regex assumes a structure where columns appear in order on each line
-    pattern = re.compile(
-        r"(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+(\d+\.\d{2})"
-    )
+    # Display the raw text for reference
+    st.write("Extracted raw text:")
+    st.text(raw_text)
+
+    # Basic regex to capture data rows with dates and numeric values
+    pattern = re.compile(r"(\d{2}/\d{2}/\d{4})\s+([\d\s]+)")
 
     # Search for matching rows
     matches = pattern.findall(raw_text)
-
+    
+    # For debugging, show what matches were found
+    st.write("Matches found:", matches)
+    
     for match in matches:
-        all_data.append(list(match))
+        row = match[0] + " " + match[1]  # combine the date and the rest of the row's data
+        all_data.append(row.split())  # split the row into individual columns
 
-    # Convert list of rows into a pandas DataFrame
-    if all_data:
-        df = pd.DataFrame(all_data, columns=headers)
-        return df
-    else:
-        return None
+    return all_data
 
 # Streamlit interface
-st.title("PDF to CSV/Excel Converter - Extract All Columns")
+st.title("PDF Data Extractor (Raw Text Mode)")
 
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
@@ -41,18 +39,19 @@ if uploaded_file is not None:
             st.write(f"Processing page {i + 1}")
             full_text += page.extract_text()
 
-    # Parse the raw text for all columns
-    df = parse_raw_text(full_text)
+    # Parse the raw text to extract all data rows
+    all_data = parse_raw_text(full_text)
     
-    if df is None or df.empty:
+    if not all_data:
         st.error("No data extracted from the PDF. Please check the file format or columns.")
     else:
-        # Display the DataFrame in Streamlit
+        # Convert to DataFrame
+        df = pd.DataFrame(all_data)
         st.dataframe(df)
 
         # Download as CSV
         csv = df.to_csv(index=False)
-        st.download_button("Download as CSV", csv, "cleaned_data.csv", "text/csv")
+        st.download_button("Download as CSV", csv, "extracted_data.csv", "text/csv")
 
         # Create Excel file in memory
         output = BytesIO()
@@ -62,4 +61,4 @@ if uploaded_file is not None:
         output.seek(0)
 
         # Download as Excel
-        st.download_button("Download as Excel", output, "cleaned_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("Download as Excel", output, "extracted_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
