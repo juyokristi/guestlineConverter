@@ -1,33 +1,37 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
+from io import BytesIO
 
-# Function to extract tables from the PDF and clean repeated headers
+# Helper function to check if a row contains a valid date
+def is_valid_date(row):
+    try:
+        pd.to_datetime(row[0], format="%d/%m/%Y")
+        return True
+    except ValueError:
+        return False
+
+# Function to extract relevant data from the PDF
 def extract_pdf(file):
     all_data = []
-    headers = ["Date", "Total", "Accomm"]  # Only interested in these columns
+    headers = ["Date", "Total", "Accomm"]
     
     with pdfplumber.open(file) as pdf:
         for i, page in enumerate(pdf.pages):
             st.write(f"Processing page {i + 1}")
             tables = page.extract_tables()
 
-            if not tables:
-                st.write(f"No tables found on page {i + 1}")
-                continue
-
             for table in tables:
-                st.write(f"Table from page {i + 1}:", table)  # Debugging info
-                
                 for row in table:
                     # Print each row to help identify issues
                     st.write(f"Row: {row}")
 
-                    # Extract specific columns (Date, Total, Accomm) only if the row has the required length
-                    if len(row) >= 9:  # Assuming column positions for Total and Accomm
-                        date = row[0]  # Date is in the first column
-                        total = row[2]  # Total is in the third column
-                        accomm = row[7]  # Accomm is in the eighth column
+                    # Skip header rows and focus on rows with valid dates
+                    if is_valid_date(row):
+                        # Extract Date, Total, Accomm (column indices 0, 2, and 7 respectively)
+                        date = row[0]
+                        total = row[2]  # Adjust the index if Total appears elsewhere
+                        accomm = row[7]  # Adjust the index if Accomm appears elsewhere
                         all_data.append([date, total, accomm])
 
     # Convert list of rows into a pandas DataFrame
