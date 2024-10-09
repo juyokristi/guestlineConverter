@@ -15,16 +15,20 @@ def extract_pdf(file):
             tables = page.extract_tables()
 
             for table in tables:
-                for row in table:
-                    # Only append row if it's not a header
-                    if row != headers:
-                        # Adjust rows that don't have the right number of columns
-                        if len(row) != len(headers):
-                            row.extend([None] * (len(headers) - len(row)))
-                        all_data.append(row)
+                if table:  # Check if the table contains data
+                    for row in table:
+                        # Only append row if it's not a header
+                        if row != headers and len(row) > 1:  # Ensure row contains data
+                            # Adjust rows that don't have the right number of columns
+                            if len(row) != len(headers):
+                                row.extend([None] * (len(headers) - len(row)))
+                            all_data.append(row)
 
     # Convert list of rows into a pandas DataFrame
-    df = pd.DataFrame(all_data, columns=headers)
+    if all_data:
+        df = pd.DataFrame(all_data, columns=headers)
+    else:
+        df = pd.DataFrame(columns=headers)  # Empty DataFrame if no data found
     
     return df
 
@@ -36,19 +40,22 @@ uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 if uploaded_file is not None:
     df = extract_pdf(uploaded_file)
     
-    # Display the DataFrame in Streamlit
-    st.dataframe(df)
+    if df.empty:
+        st.error("No data extracted from the PDF. Please check the file format.")
+    else:
+        # Display the DataFrame in Streamlit
+        st.dataframe(df)
 
-    # Download as CSV
-    csv = df.to_csv(index=False)
-    st.download_button("Download as CSV", csv, "cleaned_data.csv", "text/csv")
+        # Download as CSV
+        csv = df.to_csv(index=False)
+        st.download_button("Download as CSV", csv, "cleaned_data.csv", "text/csv")
 
-    # Create Excel file in memory
-    output = BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    df.to_excel(writer, index=False)
-    writer.save()
-    output.seek(0)
+        # Create Excel file in memory
+        output = BytesIO()
+        writer = pd.ExcelWriter(output, engine='xlsxwriter')
+        df.to_excel(writer, index=False)
+        writer.close()  # Replacing writer.save() with writer.close()
+        output.seek(0)
 
-    # Download as Excel
-    st.download_button("Download as Excel", output, "cleaned_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        # Download as Excel
+        st.download_button("Download as Excel", output, "cleaned_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
