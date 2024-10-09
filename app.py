@@ -4,20 +4,23 @@ import pdfplumber
 import re
 from io import BytesIO
 
-# Function to parse relevant data from raw text
+# Function to parse relevant data from raw text (this time capturing all columns)
 def parse_raw_text(raw_text):
     all_data = []
-    headers = ["Date", "Total", "Accomm"]
+    # Assuming the columns are Date, Avail, Total, Indv, Multi, Occ%, Ad Ch, Accomm, F&B, Other, etc.
+    headers = ["Date", "Avail", "Total", "Indv", "Multi", "Occ%", "Ad Ch", "Accomm", "F&B", "Other", "Total Revenue"]
 
-    # Updated regular expression to capture the correct "Total" and "Accomm" columns
-    pattern = re.compile(r"(\d{2}/\d{2}/\d{4})\s+\d+\s+(\d+)\s+.*?\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+\.\d{2})")
+    # Updated regular expression to capture all columns (adjust as needed based on actual text structure)
+    # This regex assumes a structure where columns appear in order on each line
+    pattern = re.compile(
+        r"(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+(\d+\.\d{2})"
+    )
 
     # Search for matching rows
     matches = pattern.findall(raw_text)
 
     for match in matches:
-        date, total, accomm = match
-        all_data.append([date, total, accomm])
+        all_data.append(list(match))
 
     # Convert list of rows into a pandas DataFrame
     if all_data:
@@ -27,7 +30,7 @@ def parse_raw_text(raw_text):
         return None
 
 # Streamlit interface
-st.title("PDF to CSV/Excel Converter")
+st.title("PDF to CSV/Excel Converter - Extract All Columns")
 
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
@@ -38,7 +41,7 @@ if uploaded_file is not None:
             st.write(f"Processing page {i + 1}")
             full_text += page.extract_text()
 
-    # Parse the raw text for Date, Total, and Accomm
+    # Parse the raw text for all columns
     df = parse_raw_text(full_text)
     
     if df is None or df.empty:
