@@ -7,17 +7,19 @@ from io import BytesIO
 # Function to parse relevant data from raw text
 def parse_raw_text(raw_text):
     all_data = []
-    headers = ["Date", "Total", "Accomm"]
+    # Define the headers to capture all columns
+    headers = ["Date", "Avail", "Total", "Indv", "Multi", "Blocks", "Occ%", "Ad", "Ch", "Inf", "Accomm", "F&B", "Other"]
 
-    # Regular expression to capture the date, total, and accommodation values from each row
-    pattern = re.compile(r"(\d{2}/\d{2}/\d{4})\s+\d+\s+(\d+)\s+.*?(\d+\.\d{2})")
+    # Updated regular expression to capture all columns
+    pattern = re.compile(
+        r"(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+(\d+\.\d{2})"
+    )
 
     # Search for matching rows
     matches = pattern.findall(raw_text)
 
     for match in matches:
-        date, total, accomm = match
-        all_data.append([date, total, other])
+        all_data.append(list(match))
 
     # Convert list of rows into a pandas DataFrame
     if all_data:
@@ -27,7 +29,7 @@ def parse_raw_text(raw_text):
         return None
 
 # Streamlit interface
-st.title("PDF to CSV/Excel Converter")
+st.title("PDF to CSV/Excel Converter - Capture All Columns")
 
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
@@ -38,7 +40,7 @@ if uploaded_file is not None:
             st.write(f"Processing page {i + 1}")
             full_text += page.extract_text()
 
-    # Parse the raw text for Date, Total, and Accomm
+    # Parse the raw text for all columns
     df = parse_raw_text(full_text)
     
     if df is None or df.empty:
